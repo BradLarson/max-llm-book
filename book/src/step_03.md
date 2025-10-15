@@ -1,0 +1,163 @@
+# Step 03: Implement Layer Normalization (`step_03.py`)
+
+**Purpose**: Create a custom layer normalization module for stabilizing neural network training.
+
+## What is Layer Normalization?
+
+[Layer Normalization](https://arxiv.org/abs/1607.06450) is a technique that normalizes the inputs across the features (the last dimension) for each example in a batch. Unlike batch normalization which normalizes across the batch dimension, layer normalization normalizes across the feature dimension, making it particularly well-suited for sequence models and transformers.
+
+The normalization process involves:
+1. Computing the mean and variance across the feature dimension
+2. Subtracting the mean and dividing by the standard deviation (adding a small epsilon for numerical stability)
+3. Scaling by a learned weight parameter (gamma) and shifting by a learned bias parameter (beta)
+
+Mathematically: `LayerNorm(x) = � * (x - �) / (ò + �) + �`
+
+where � is the mean, ò is the variance, � (gamma/weight) is the learned scale, and � (beta/bias) is the learned shift.
+
+## Why Use Layer Normalization?
+
+**1. Training Stability**: Layer normalization reduces internal covariate shift, stabilizing the distribution of layer inputs during training. This allows for higher learning rates and faster convergence.
+
+**2. Position-Independent**: Unlike batch normalization, layer norm doesn't depend on batch size or statistics, making it ideal for:
+   - Variable-length sequences
+   - Small batch sizes
+   - Recurrent and transformer architectures
+
+**3. Inference Consistency**: Layer norm computes statistics per example, so there's no train-test discrepancy (batch norm requires tracking running statistics for inference).
+
+**4. Transformer Standard**: Layer normalization has become the de facto normalization technique in transformer architectures, including GPT-2, BERT, and their variants. GPT-2 uses layer norm before the attention and MLP blocks in each transformer layer.
+
+### Key Concepts:
+
+**Layer Normalization Mechanics**:
+- Normalizes across the feature/embedding dimension (last dimension)
+- Computes mean and variance independently for each example
+- Learns two parameters per feature: weight (�/gamma) and bias (�/beta)
+- Small epsilon (typically 1e-5) prevents division by zero
+
+**Learnable Parameters**:
+- `weight` (gamma): Learned scaling parameter, initialized to ones
+- `bias` (beta): Learned shift parameter, initialized to zeros
+- Both have shape `[dim]` where dim is the feature dimension
+
+**MAX Tensor Initialization**:
+- [`Tensor.ones()`](https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.ones): Creates tensor filled with 1.0 values
+- [`Tensor.zeros()`](https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.zeros): Creates tensor filled with 0.0 values
+- Both methods take a shape argument as a list: `[dim]`
+
+**MAX Layer Normalization**:
+- [`F.layer_norm()`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.layer_norm): Applies layer normalization
+- Parameters:
+  - `input`: Tensor to normalize
+  - `gamma`: Weight/scale parameter (our `self.weight`)
+  - `beta`: Bias/shift parameter (our `self.bias`)
+  - `epsilon`: Small constant for numerical stability
+
+### Implementation Tasks (`step_03.py`):
+
+1. **Import Required Modules** (Lines 1-6):
+   - `functional as F` from `max.experimental` - provides F.layer_norm()
+   - `Tensor` from `max.experimental.tensor` - needed for Tensor.ones() and Tensor.zeros()
+
+2. **Initialize Weight Parameter** (Lines 24-27):
+   - Use `Tensor.ones([dim])` to create weight parameter
+   - Initialized to ones so initial normalization is identity (before training)
+   - This is the gamma (�) parameter that scales the normalized values
+
+3. **Initialize Bias Parameter** (Lines 29-32):
+   - Use `Tensor.zeros([dim])` to create bias parameter
+   - Initialized to zeros so initial normalization has no shift (before training)
+   - This is the beta (�) parameter that shifts the normalized values
+
+4. **Apply Layer Normalization** (Lines 43-47):
+   - Use `F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)`
+   - Returns the normalized tensor
+   - The epsilon value (1e-5) is already set in `__init__`
+
+**Implementation**:
+```python
+# Import required modules from MAX
+from max.experimental import functional as F
+from max.experimental.tensor import Tensor
+from max.graph import DimLike
+from max.nn.module_v3 import Module
+
+class LayerNorm(Module):
+    """Layer normalization module."""
+
+    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
+        super().__init__()
+        self.eps = eps
+
+        # Initialize learnable weight parameter (gamma)
+        self.weight = Tensor.ones([dim])
+
+        # Initialize learnable bias parameter (beta)
+        self.bias = Tensor.zeros([dim])
+
+    def __call__(self, x: Tensor) -> Tensor:
+        """Apply layer normalization."""
+        # Apply layer normalization with learned parameters
+        return F.layer_norm(
+            x, gamma=self.weight, beta=self.bias, epsilon=self.eps
+        )
+```
+
+### Validation:
+Run `pixi run s03`
+
+A failed test will show:
+```bash
+Running tests for Step 03: Implement Layer Normalization...
+
+Results:
+L functional module is not imported from max.experimental
+   Hint: Add 'from max.experimental import functional as F'
+L Tensor is not imported from max.experimental.tensor
+   Hint: Add 'from max.experimental.tensor import Tensor'
+ LayerNorm class exists
+L Tensor.ones is not used correctly for weight initialization
+   Hint: Use Tensor.ones([dim]) to initialize self.weight
+L Tensor.zeros is not used correctly for bias initialization
+   Hint: Use Tensor.zeros([dim]) to initialize self.bias
+L F.layer_norm is not used
+   Hint: Use F.layer_norm() in the __call__ method
+L F.layer_norm is not used with correct parameters
+   Hint: Use F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
+L Found placeholder 'None' values that need to be replaced:
+   self.weight = None
+   self.bias = None
+   return None
+   Hint: Replace all 'None' values with the actual implementation
+L LayerNorm class instantiation failed: 'NoneType' object has no attribute '__iter__'
+   This usually means some TODO items are not completed
+```
+
+A successful test will show:
+```bash
+Running tests for Step 03: Implement Layer Normalization...
+
+Results:
+ functional module is correctly imported as F from max.experimental
+ Tensor is correctly imported from max.experimental.tensor
+ LayerNorm class exists
+ Tensor.ones is used for weight initialization
+ Tensor.zeros is used for bias initialization
+ F.layer_norm is used
+ F.layer_norm is used with correct parameters (gamma, beta, epsilon)
+ All placeholder 'None' values have been replaced
+ LayerNorm class can be instantiated
+ LayerNorm.weight is initialized
+ LayerNorm.bias is initialized
+ LayerNorm.eps has correct default value: 1e-05
+ LayerNorm forward pass executes without errors
+ LayerNorm returns a non-None result
+ Output shape is correct: (2, 4)
+
+============================================================
+<� All checks passed! Your implementation matches the solution.
+============================================================
+```
+
+**Reference**: `solutions/solution_03.py`
