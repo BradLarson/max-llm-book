@@ -16,7 +16,10 @@ Run: pixi run s07
 """
 
 # TODO: Import required modules
-# Hint: Copy imports from solution_02.py (math, F, Tensor, Device, DType, Dim, DimLike)
+# Hint: You'll need math for scaling
+# Hint: You'll need functional as F from max.experimental
+# Hint: You'll need Tensor, Device, DType from max.experimental.tensor and max.driver
+# Hint: You'll need Dim, DimLike from max.graph
 # Hint: You'll also need Linear and Module from max.nn.module_v3
 
 from solutions.solution_01 import GPT2Config
@@ -96,10 +99,14 @@ class GPT2MultiHeadAttention(Module):
         Returns:
             Attention output, shape [batch, num_heads, seq_length, head_size]
         """
-        # TODO: Copy attention computation from solution_02.py
+        # TODO: Implement attention computation
         # The same 5-step process: scores, scale, mask, softmax, weighted sum
-        # Hint: This is exactly the same as Step 02, but works on all heads in parallel
-        return None
+        # Hint: Compute attention scores: query @ key.transpose(-1, -2)
+        # Hint: Scale by sqrt(head_dim): attn_weights / math.sqrt(head_dim)
+        # Hint: Apply causal mask using causal_mask function
+        # Hint: Apply softmax: F.softmax(attn_weights)
+        # Hint: Weighted sum: attn_weights @ value
+        return None  # Line 100-103
 
     def __call__(self, hidden_states):
         """Apply multi-head attention.
