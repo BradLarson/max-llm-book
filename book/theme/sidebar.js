@@ -55,7 +55,6 @@ newCollapse.addEventListener(
   "click",
   function (event) {
     event.preventDefault();
-    event.stopPropagation();
     updateSidebarState("hidden");
     try {
       localStorage.setItem("mdbook-sidebar", "hidden");
@@ -71,7 +70,6 @@ newVerticalToggle.addEventListener(
   "click",
   function (event) {
     event.preventDefault();
-    event.stopPropagation();
     const newState = sidebar === "visible" ? "hidden" : "visible";
     updateSidebarState(newState);
     try {

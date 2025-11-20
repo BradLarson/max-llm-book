@@ -295,6 +295,7 @@ body.sidebar-hidden #sidebar-toggle {
   border-radius: 2px;
   transition: all 0.1s ease-in-out;
   cursor: pointer;
+  pointer-events: none;
   i {
     margin: 6px 5px;
   }
@@ -952,6 +953,7 @@ mark {
     top: 22px;
     left: 18px;
     border: none;
+    pointer-events: auto;
   }
 }
 
