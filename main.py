@@ -43,7 +43,7 @@ class GPT2MLP(Module):
         self.c_fc = Linear(embed_dim, intermediate_size, bias=True)
         self.c_proj = Linear(intermediate_size, embed_dim, bias=True)
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states):
         hidden_states = self.c_fc(hidden_states)
         hidden_states = F.gelu(hidden_states, approximate="tanh")
         hidden_states = self.c_proj(hidden_states)
@@ -113,7 +113,7 @@ class GPT2MultiHeadAttention(Module):
         new_shape = tensor.shape[:-2] + [num_heads * attn_head_size]
         return tensor.reshape(new_shape)
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states):
         query, key, value = F.split(
             self.c_attn(hidden_states),
             [self.split_size, self.split_size, self.split_size],
@@ -141,7 +141,7 @@ class LayerNorm(Module):
         self.weight = Tensor.ones([dim])
         self.bias = Tensor.zeros([dim])
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
 
 
@@ -166,7 +166,7 @@ class GPT2Block(Module):
         self.ln_2 = LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
         self.mlp = GPT2MLP(inner_dim, config)
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states):
         residual = hidden_states
         hidden_states = self.ln_1(hidden_states)
         attn_output = self.attn(hidden_states)
@@ -194,7 +194,7 @@ class MaxGPT2Model(Module):
         self.h = Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))
         self.ln_f = LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids):
         batch_size, seq_length = input_ids.shape
         tok_embeds = self.wte(input_ids)
         pos_embeds = self.wpe(
@@ -219,7 +219,7 @@ class MaxGPT2LMHeadModel(Module):
         self.transformer = MaxGPT2Model(config)
         self.lm_head = Linear(config.n_embd, config.vocab_size, bias=False)
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids):
         input_ids = self.transformer(input_ids)
         return self.lm_head(input_ids)
 
